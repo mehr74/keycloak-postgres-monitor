@@ -1,0 +1,76 @@
+version: "3"
+services:
+  postgres:
+    image: postgres
+    environment:
+      - POSTGRES_PASSWORD=password
+    volumes:
+      - ./postgres:/docker-entrypoint-initdb.d
+    networks:
+      - hostnet
+  
+  postgres-exporter:
+    image: quay.io/prometheuscommunity/postgres-exporter
+    environment:
+      - DATA_SOURCE_NAME=postgresql://postgres:password@localhost:5432/postgres?sslmode=disable
+    command: 
+      - --collector.stat_statements
+      - --collector.process_idle
+      - --collector.postmaster
+    ports:
+      - 9187:9187
+    networks:
+      - hostnet
+# 
+#   prometheus:
+#     image: quay.io/prometheus/prometheus
+#     volumes:
+#       - ./prometheus/:/etc/prometheus/
+#     command: "--config.file=/etc/prometheus/prometheus.yaml --storage.tsdb.path=/prometheus"
+#     ports:
+#       - 9090:9090
+#     networks:
+#       - hostnet
+#   
+#   alertmanager:
+#     image: quay.io/prometheus/alertmanager
+#     volumes:
+#       - ./alertmanager/:/etc/alertmanager/
+#     ports:
+#       - 9093:9093
+#     networks:
+#       - hostnet
+#     
+#   grafana:
+#     image: grafana/grafana
+#     volumes:
+#       - ./grafana/provisioning/datasources/:/etc/grafana/provisioning/datasources/
+#     environment:
+#       - GF_PATH_PROVISIONING=/etc/grafana/provisioning
+#     ports:
+#       - 3000:3000 
+#     networks:
+#       - hostnet
+# 
+#   mailhog:
+#     image: mailhog/mailhog
+#     ports:
+#       - 8025:8025
+#       - 1025:1025
+#     networks:
+#       - hostnet
+#   
+#   stunnel:
+#     image: dweomer/stunnel
+#     environment:
+#       - STUNNEL_SERVICE=smtps
+#       - STUNNEL_ACCEPT=465
+#       - STUNNEL_CONNECT=mailhog:1025
+#     ports:
+#       - 465:465
+#     networks:
+#       - hostnet
+
+networks:
+  hostnet:
+    driver: bridge
