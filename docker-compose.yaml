@@ -12,7 +12,6 @@ services:
       POSTGRES_PASSWORD: password
     volumes:
       - ./postgres/data:/var/lib/postgresql/data
-      - ./postgres/init/:/docker-entrypoint-initdb.d/
   
   postgres-init:
     image: postgres:15
@@ -75,52 +74,41 @@ services:
       - keycloak
       - postgres
 
-#   prometheus:
-#     image: quay.io/prometheus/prometheus
-#     volumes:
-#       - ./prometheus/:/etc/prometheus/
-#     command: "--config.file=/etc/prometheus/prometheus.yaml --storage.tsdb.path=/prometheus"
-#     ports:
-#       - 9090:9090
-#     networks:
-#       - hostnet
-#   
-#   alertmanager:
-#     image: quay.io/prometheus/alertmanager
-#     volumes:
-#       - ./alertmanager/:/etc/alertmanager/
-#     ports:
-#       - 9093:9093
-#     networks:
-#       - hostnet
-#     
-#   grafana:
-#     image: grafana/grafana
-#     volumes:
-#       - ./grafana/provisioning/datasources/:/etc/grafana/provisioning/datasources/
-#     environment:
-#       - GF_PATH_PROVISIONING=/etc/grafana/provisioning
-#     ports:
-#       - 3000:3000 
-#     networks:
-#       - hostnet
-# 
-#   mailhog:
-#     image: mailhog/mailhog
-#     ports:
-#       - 8025:8025
-#       - 1025:1025
-#     networks:
-#       - hostnet
-#   
-#   stunnel:
-#     image: dweomer/stunnel
-#     environment:
-#       - STUNNEL_SERVICE=smtps
-#       - STUNNEL_ACCEPT=465
-#       - STUNNEL_CONNECT=mailhog:1025
-#     ports:
-#       - 465:465
-#     networks:
-#       - hostnet
-# 
+  prometheus:
+    image: quay.io/prometheus/prometheus
+    volumes:
+      - ./prometheus/:/etc/prometheus/
+    command: "--config.file=/etc/prometheus/prometheus.yaml --storage.tsdb.path=/prometheus"
+    ports:
+      - 9090:9090
+  
+  alertmanager:
+    image: quay.io/prometheus/alertmanager
+    volumes:
+      - ./alertmanager/:/etc/alertmanager/
+    ports:
+      - 9093:9093
+    
+  grafana:
+    image: grafana/grafana
+    volumes:
+      - ./grafana/provisioning/datasources/:/etc/grafana/provisioning/datasources/
+    environment:
+      - GF_PATH_PROVISIONING=/etc/grafana/provisioning
+    ports:
+      - 3000:3000 
+
+  mailhog:
+    image: mailhog/mailhog
+    ports:
+      - 8025:8025
+      - 1025:1025
+  
+  stunnel:
+    image: dweomer/stunnel
+    environment:
+      - STUNNEL_SERVICE=smtps
+      - STUNNEL_ACCEPT=465
+      - STUNNEL_CONNECT=mailhog:1025
+    ports:
+      - 465:465
