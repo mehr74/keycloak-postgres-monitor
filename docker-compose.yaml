@@ -1,27 +1,40 @@
 version: "3.8"
 services:
   postgres:
-    image: docker.io/postgres:15
+    image: postgres:15
+    command: >
+      postgres
+      -c shared_preload_libraries=pg_stat_statements 
+      -c pg_stat_statements.track=all 
+      -c max_connections=200
     environment:
       POSTGRES_USER: keycloak
       POSTGRES_PASSWORD: password
     volumes:
       - ./postgres/data:/var/lib/postgresql/data
-    networks:
-      - hostnet
+      - ./postgres/init/:/docker-entrypoint-initdb.d/
+  
+  postgres-init:
+    image: postgres:15
+    command: >
+      bash -c "sleep 5 && 
+      psql -U keycloak -d postgres -c 'CREATE EXTENSION IF NOT EXISTS pg_stat_statements;'"
+    depends_on:
+      - postgres
   
   postgres-exporter:
     image: quay.io/prometheuscommunity/postgres-exporter
     environment:
-      - DATA_SOURCE_NAME=postgresql://keycloak:password@localhost:5432/postgres?sslmode=disable
+      - DATA_SOURCE_NAME=postgresql://keycloak:password@postgres:5432/postgres?sslmode=disable
     command: 
       - --collector.stat_statements
       - --collector.process_idle
       - --collector.postmaster
     ports:
       - 9187:9187
-    networks:
-      - hostnet
+    depends_on:
+      - postgres
+      - postgres-init
   
   keycloak:
     image: quay.io/keycloak/keycloak:23.0
@@ -50,8 +63,6 @@ services:
       - ./certs:/opt/keycloak/certs
     depends_on:
       - postgres
-    networks:
-      - hostnet
 
   load-balancer:
     image: docker.io/nginx:alpine
@@ -63,10 +74,7 @@ services:
     depends_on:
       - keycloak
       - postgres
-    networks:
-      - hostnet
 
-# 
 #   prometheus:
 #     image: quay.io/prometheus/prometheus
 #     volumes:
@@ -115,7 +123,4 @@ services:
 #       - 465:465
 #     networks:
 #       - hostnet
-
-networks:
-  hostnet:
-    driver: host
+# 
