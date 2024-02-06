@@ -1,9 +1,19 @@
-# Postgres monitoring with prometheus and grafana
-This repository contains a docker-compose file to run a postgres database, 
-a prometheus server, a grafana server and a postgres exporter. The exporter 
-is used to collect metrics from the database and send them to the prometheus 
-server. The prometheus server is used to store the metrics and the grafana 
-server is used to visualize the metrics.
+# Postgres Monitoring with Prometheus and Grafana
+
+This repository contains a docker-compose file to run a PostgreSQL 
+database with Keycloak as a backend. The goal is to monitor the 
+database using Prometheus and Grafana.
+
+## Overview
+
+To achieve this, we use the following components:
+
+- **Postgres Exporter**: Collects metrics from the database and sends them to the Prometheus server.
+- **pg_stat_statements**: A PostgreSQL extension that collects query metrics inside the database.
+- **Prometheus**: Stores the metrics collected from the Postgres Exporter.
+- **Grafana**: Visualizes the metrics stored in Prometheus.
+- **Alertmanager**: Sends alerts to the Slack channel.
+- **Mailhog**: SMTP server for testing.
 
 ## Requirements
 - docker and docker-compose
@@ -11,14 +21,13 @@ server is used to visualize the metrics.
 ## Usage
 Run the following command to start the services:
 ```bash
-docker-compose up
+docker compose up
 ```
 
 ## Services 
 
 Service | Description | URL
 --- | --- | ---
-Postgres | Database | postgres://postgres:xxxxxxxx@xxxxxxxxx:5432/postgres
 Postgres Exporter | Collects metrics from the database and sends them to the prometheus server | http://localhost:9187
 Keycloak | Identity and Access Management | https://localhost
 Prometheus | Stores the metrics | http://localhost:9090
