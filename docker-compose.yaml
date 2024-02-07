@@ -6,25 +6,34 @@ services:
       postgres
       -c shared_preload_libraries=pg_stat_statements 
       -c pg_stat_statements.track=all 
+      -c pg_stat_replication.track=all
       -c max_connections=200
     environment:
       POSTGRES_USER: keycloak
       POSTGRES_PASSWORD: password
+      POSTGRES_HOST_AUTH_METHOD: trust
     volumes:
       - ./postgres/data:/var/lib/postgresql/data
+    healthcheck:
+      test: 'pg_isready -U keycloak --dbname=postgres'
+      interval: 10s
+      timeout: 5s
+      retries: 5 
+    ports:
+      - "127.0.0.1:5432:5432"
   
   postgres-init:
     image: postgres:15
     command: >
       bash -c "sleep 3 && 
-      psql -c 'CREATE EXTENSION IF NOT EXISTS pg_stat_statements;' postgresql://keycloak:password@postgres:5432/postgres"
+      psql -c 'CREATE EXTENSION IF NOT EXISTS pg_stat_statements;' postgresql://keycloak:password@postgres:5432/keycloak"
     depends_on:
       - postgres
   
   postgres-exporter:
     image: quay.io/prometheuscommunity/postgres-exporter
     environment:
-      - DATA_SOURCE_NAME=postgresql://keycloak:password@postgres:5432/postgres?sslmode=disable
+      - DATA_SOURCE_NAME=postgresql://keycloak:password@postgres:5432/keycloak?sslmode=disable
     command: 
       - --collector.stat_statements
       - --collector.process_idle
@@ -77,10 +86,13 @@ services:
   prometheus:
     image: quay.io/prometheus/prometheus
     volumes:
-      - ./prometheus/:/etc/prometheus/
+      - ./prometheus/config:/etc/prometheus/
+      - ./prometheus/data:/prometheus
     command: "--config.file=/etc/prometheus/prometheus.yaml --storage.tsdb.path=/prometheus"
     ports:
       - 9090:9090
+    depends_on:
+      - keycloak
   
   alertmanager:
     image: quay.io/prometheus/alertmanager
@@ -88,21 +100,29 @@ services:
       - ./alertmanager/:/etc/alertmanager/
     ports:
       - 9093:9093
+    depends_on:
+      - prometheus
     
   grafana:
     image: grafana/grafana
     volumes:
+      - ./grafana/var:/var/lib/grafana
       - ./grafana/provisioning/datasources/:/etc/grafana/provisioning/datasources/
+      - ./grafana/provisioning/dashboards/:/etc/grafana/provisioning/dashboards/
     environment:
       - GF_PATH_PROVISIONING=/etc/grafana/provisioning
     ports:
       - 3000:3000 
+    depends_on:
+      - prometheus
 
   mailhog:
     image: mailhog/mailhog
     ports:
       - 8025:8025
       - 1025:1025
+    depends_on:
+      - alertmanager
   
   stunnel:
     image: dweomer/stunnel
