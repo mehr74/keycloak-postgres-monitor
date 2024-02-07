@@ -16,8 +16,8 @@ services:
   postgres-init:
     image: postgres:15
     command: >
-      bash -c "sleep 5 && 
-      psql -U keycloak -d postgres -c 'CREATE EXTENSION IF NOT EXISTS pg_stat_statements;'"
+      bash -c "sleep 3 && 
+      psql -c 'CREATE EXTENSION IF NOT EXISTS pg_stat_statements;' postgresql://keycloak:password@postgres:5432/postgres"
     depends_on:
       - postgres
   
